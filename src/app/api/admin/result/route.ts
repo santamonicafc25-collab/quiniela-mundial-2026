@@ -10,7 +10,17 @@ export async function POST(req: NextRequest) {
   }
   const { partidoId, golesLocal, golesVisitante } = await req.json();
 
-  await supabase
+  if (
+    !partidoId ||
+    !Number.isInteger(golesLocal) ||
+    !Number.isInteger(golesVisitante) ||
+    golesLocal < 0 ||
+    golesVisitante < 0
+  ) {
+    return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+  }
+
+  const { error: errPartido } = await supabase
     .from("partido")
     .update({
       goles_local_real: golesLocal,
@@ -18,6 +28,9 @@ export async function POST(req: NextRequest) {
       estado: "finalizado",
     })
     .eq("id", partidoId);
+  if (errPartido) {
+    return NextResponse.json({ error: "No se pudo actualizar el partido" }, { status: 500 });
+  }
 
   const { data: pronos } = await supabase
     .from("pronostico")
