@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { validarAdmin } from "../login/route";
+import { validarAdmin } from "../_auth";
 
 export async function POST(req: NextRequest) {
   const clave = req.headers.get("x-admin-clave");

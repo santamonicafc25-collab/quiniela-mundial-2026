@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { validarAdmin } from "../login/route";
+import { validarAdmin } from "../_auth";
 import { puntosPronostico } from "@/lib/scoring";
 
 export async function POST(req: NextRequest) {

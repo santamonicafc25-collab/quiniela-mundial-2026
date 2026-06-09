@@ -17,15 +17,3 @@ export async function POST(req: NextRequest) {
   // Token simple: la propia clave validada se reenvía en cada request admin y se revalida.
   return NextResponse.json({ ok: true });
 }
-
-/** Helper reutilizable: valida la clave admin enviada en el header. */
-export async function validarAdmin(clave: string | null): Promise<boolean> {
-  if (!clave) return false;
-  const { data: sala } = await supabase
-    .from("sala")
-    .select("clave_admin_hash")
-    .limit(1)
-    .single();
-  if (!sala) return false;
-  return bcrypt.compare(clave, sala.clave_admin_hash);
-}
