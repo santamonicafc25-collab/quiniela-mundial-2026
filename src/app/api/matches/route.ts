@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   const { data: pronos } = await supabase
     .from("pronostico")
-    .select("partido_id, goles_local_pred, goles_visitante_pred")
+    .select("partido_id, goles_local_pred, goles_visitante_pred, puntos_obtenidos")
     .eq("jugador_id", jugadorId);
 
   const fechas: PartidoFecha[] = (partidos ?? []).map((p) => ({
