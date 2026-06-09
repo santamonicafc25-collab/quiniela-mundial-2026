@@ -1,36 +1,33 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Quiniela Mundial 2026
 
-## Getting Started
+Web gratuita para una quiniela privada del Mundial 2026. Stack: Next.js + Supabase, desplegable en Vercel.
 
-First, run the development server:
+## Puesta en marcha
 
-```bash
+### 1. Supabase
+1. Crear proyecto gratuito en https://supabase.com
+2. SQL Editor → ejecutar `supabase/schema.sql`
+3. Generar la sala: `node scripts/seed-sala.mjs MI_CODIGO MI_CLAVE_ADMIN` y ejecutar el INSERT resultante en el SQL Editor.
+4. Copiar la URL del proyecto y la **service_role key** (Settings → API).
+
+### 2. Variables de entorno
+Copiar `.env.example` a `.env.local` y rellenar `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`.
+
+### 3. Local
+```
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 4. Despliegue en Vercel
+1. Importar el repo en https://vercel.com
+2. Añadir las variables de entorno `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`.
+3. Deploy.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Uso
+- **Jugadores:** entran en `/` con código de sala + nombre + PIN, pronostican en `/jugar`, ven el ranking en `/ranking`.
+- **Admin:** entra en `/admin` con la clave secreta para crear partidos y cargar resultados.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Reglas
+- Marcador exacto = 2 pts · resultado (1X2) acertado = 1 pt · fallo = 0.
+- Los pronósticos de una jornada se cierran al inicio del primer partido de esa jornada.
