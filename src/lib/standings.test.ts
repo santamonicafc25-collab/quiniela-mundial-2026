@@ -17,7 +17,7 @@ describe("tablaGrupo", () => {
     expect(t[0].pts).toBe(9);
     expect(t[0].pj).toBe(3);
     expect(t[0].dg).toBe(6);
-    expect(t.map((x) => x.equipo)).toEqual(["México", "Sudáfrica", "Corea del Sur", "Chequia"]);
+    expect(t.map((x) => x.equipo)).toEqual(["México", "Sudáfrica", "Chequia", "Corea del Sur"]);
   });
 });
 
@@ -33,7 +33,7 @@ describe("rankingTerceros", () => {
       { grupo: "B", local: "Catar", visitante: "Suiza", gl: 0, gv: 3 },
     ];
     const terceros = rankingTerceros(["A", "B"], partidos);
-    expect(terceros[0].equipo).toBe("Corea del Sur");
+    expect(terceros[0].equipo).toBe("Chequia");
     expect(terceros[0].grupo).toBe("A");
     expect(terceros[1].grupo).toBe("B");
   });
