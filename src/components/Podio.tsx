@@ -131,52 +131,19 @@ export function Podio({ top3 }: { top3: FilaRanking[] }) {
 
         {/* The actual podium blocks */}
         <div className="flex items-end justify-center gap-3 mt-3">
-          {PODIO_CONFIG.map((cfg) => {
-            const fila = top3[cfg.rankIndex];
-            return (
-              <div
-                key={cfg.rankIndex}
-                className={`w-24 ${cfg.heightClass} ${cfg.bgClass} rounded-t-lg border ${cfg.borderClass} flex items-center justify-center`}
-              >
-                <span className="text-2xl font-black text-white/60 tabular-nums select-none">
-                  {cfg.rankIndex + 1}
-                </span>
-                {!fila && (
-                  <span className="absolute text-[11px] text-slate-400 italic" />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Full ranking list if there are more than 3 */}
-      {top3.length > 0 && (
-        <div className="border-t border-slate-100 px-5 py-3 space-y-0">
-          {top3.map((fila, idx) => (
+          {PODIO_CONFIG.map((cfg) => (
             <div
-              key={fila.nombre + idx}
-              className="flex items-center gap-3 py-2.5 border-b border-slate-50 last:border-0"
+              key={cfg.rankIndex}
+              className={`w-24 ${cfg.heightClass} ${cfg.bgClass} rounded-t-lg border ${cfg.borderClass} flex items-center justify-center`}
             >
-              <span className="w-6 text-center text-sm font-bold tabular-nums text-slate-400">
-                {idx < 3 ? MEDALS[idx] : `${idx + 1}`}
+              <span className="text-2xl font-black text-white/60 tabular-nums select-none">
+                {cfg.rankIndex + 1}
               </span>
-              <span className="flex-1 text-sm font-medium text-slate-800 truncate">
-                {fila.nombre}
-              </span>
-              <span className="tabular-nums text-sm font-bold text-slate-700">
-                {fila.puntos}
-                <span className="ml-0.5 text-[11px] font-normal text-slate-400">pts</span>
-              </span>
-              {fila.exactos > 0 && (
-                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-500 tabular-nums">
-                  ★{fila.exactos}
-                </span>
-              )}
             </div>
           ))}
         </div>
-      )}
+      </div>
+
     </div>
   );
 }

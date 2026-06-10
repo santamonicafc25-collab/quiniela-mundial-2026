@@ -6,6 +6,7 @@ export type PartidoUI = {
   id: string; equipo_local: string; equipo_visitante: string;
   fecha_hora: string; fase: string; jornada: number; cerrado: boolean;
   goles_local_real: number | null; goles_visitante_real: number | null;
+  ganador: string | null;
   miPronostico: { goles_local_pred: number; goles_visitante_pred: number; puntos_obtenidos: number } | null;
 };
 

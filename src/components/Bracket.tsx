@@ -106,10 +106,14 @@ function BracketCard({
     partido.goles_local_real != null && partido.goles_visitante_real != null;
   const localWins =
     jugado &&
-    (partido.goles_local_real ?? 0) > (partido.goles_visitante_real ?? 0);
+    (partido.ganador
+      ? partido.ganador === partido.equipo_local
+      : (partido.goles_local_real ?? 0) > (partido.goles_visitante_real ?? 0));
   const visitanteWins =
     jugado &&
-    (partido.goles_visitante_real ?? 0) > (partido.goles_local_real ?? 0);
+    (partido.ganador
+      ? partido.ganador === partido.equipo_visitante
+      : (partido.goles_visitante_real ?? 0) > (partido.goles_local_real ?? 0));
 
   return (
     <div className="w-[160px] shrink-0 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden transition-shadow hover:shadow-md">

@@ -25,8 +25,8 @@ export async function POST(req: NextRequest) {
     .update({
       goles_local_real: golesLocal,
       goles_visitante_real: golesVisitante,
-      ganador: ganador ?? null,
       estado: "finalizado",
+      ...(ganador ? { ganador } : {}),
     })
     .eq("id", partidoId);
   if (errPartido) {
