@@ -1,0 +1,87 @@
+-- Quiniela Mundial 2026 — Carga de los 72 partidos de la FASE DE GRUPOS
+-- Fuente: PDF oficial FIFA (calendario). Horas convertidas de hora de España (CEST, UTC+2) a UTC.
+-- Cada partido lleva un número de "jornada" único (1..72) para que el cierre sea POR PARTIDO
+-- (cada uno se bloquea exactamente a su hora de inicio).
+-- Ejecutar en Supabase → SQL Editor. Requiere que la sala 'MUNDIAL26' ya exista.
+
+insert into partido (sala_id, equipo_local, equipo_visitante, fecha_hora, fase, jornada)
+select s.id, v.local, v.visitante, v.fh::timestamptz, 'grupos'::fase_t, v.jornada
+from sala s
+cross join (values
+  ('México','Sudáfrica','2026-06-11 19:00:00+00', 1),
+  ('Corea del Sur','Chequia','2026-06-12 02:00:00+00', 2),
+  ('Canadá','Bosnia y Herzegovina','2026-06-12 19:00:00+00', 3),
+  ('Estados Unidos','Paraguay','2026-06-13 01:00:00+00', 4),
+  ('Catar','Suiza','2026-06-13 19:00:00+00', 5),
+  ('Brasil','Marruecos','2026-06-13 22:00:00+00', 6),
+  ('Haití','Escocia','2026-06-14 01:00:00+00', 7),
+  ('Australia','Turquía','2026-06-14 04:00:00+00', 8),
+  ('Alemania','Curazao','2026-06-14 17:00:00+00', 9),
+  ('Países Bajos','Japón','2026-06-14 20:00:00+00', 10),
+  ('Costa de Marfil','Ecuador','2026-06-14 23:00:00+00', 11),
+  ('Suecia','Túnez','2026-06-15 02:00:00+00', 12),
+  ('España','Cabo Verde','2026-06-15 16:00:00+00', 13),
+  ('Bélgica','Egipto','2026-06-15 19:00:00+00', 14),
+  ('Arabia Saudita','Uruguay','2026-06-15 22:00:00+00', 15),
+  ('Irán','Nueva Zelanda','2026-06-16 01:00:00+00', 16),
+  ('Francia','Senegal','2026-06-16 19:00:00+00', 17),
+  ('Irak','Noruega','2026-06-16 22:00:00+00', 18),
+  ('Argentina','Argelia','2026-06-17 01:00:00+00', 19),
+  ('Austria','Jordania','2026-06-17 04:00:00+00', 20),
+  ('Portugal','RD Congo','2026-06-17 17:00:00+00', 21),
+  ('Inglaterra','Croacia','2026-06-17 20:00:00+00', 22),
+  ('Ghana','Panamá','2026-06-17 23:00:00+00', 23),
+  ('Uzbekistán','Colombia','2026-06-18 02:00:00+00', 24),
+  ('Chequia','Sudáfrica','2026-06-18 16:00:00+00', 25),
+  ('Suiza','Bosnia y Herzegovina','2026-06-18 19:00:00+00', 26),
+  ('Canadá','Catar','2026-06-18 22:00:00+00', 27),
+  ('México','Corea del Sur','2026-06-19 01:00:00+00', 28),
+  ('Estados Unidos','Australia','2026-06-19 19:00:00+00', 29),
+  ('Escocia','Marruecos','2026-06-19 22:00:00+00', 30),
+  ('Brasil','Haití','2026-06-20 00:30:00+00', 31),
+  ('Turquía','Paraguay','2026-06-20 03:00:00+00', 32),
+  ('Países Bajos','Suecia','2026-06-20 17:00:00+00', 33),
+  ('Alemania','Costa de Marfil','2026-06-20 20:00:00+00', 34),
+  ('Ecuador','Curazao','2026-06-21 00:00:00+00', 35),
+  ('Túnez','Japón','2026-06-21 04:00:00+00', 36),
+  ('España','Arabia Saudita','2026-06-21 16:00:00+00', 37),
+  ('Bélgica','Irán','2026-06-21 19:00:00+00', 38),
+  ('Uruguay','Cabo Verde','2026-06-21 22:00:00+00', 39),
+  ('Nueva Zelanda','Egipto','2026-06-22 01:00:00+00', 40),
+  ('Argentina','Austria','2026-06-22 17:00:00+00', 41),
+  ('Francia','Irak','2026-06-22 21:00:00+00', 42),
+  ('Noruega','Senegal','2026-06-23 00:00:00+00', 43),
+  ('Jordania','Argelia','2026-06-23 03:00:00+00', 44),
+  ('Portugal','Uzbekistán','2026-06-23 17:00:00+00', 45),
+  ('Inglaterra','Ghana','2026-06-23 20:00:00+00', 46),
+  ('Panamá','Croacia','2026-06-23 23:00:00+00', 47),
+  ('Colombia','RD Congo','2026-06-24 02:00:00+00', 48),
+  ('Suiza','Canadá','2026-06-24 19:00:00+00', 49),
+  ('Bosnia y Herzegovina','Catar','2026-06-24 19:00:00+00', 50),
+  ('Escocia','Brasil','2026-06-24 22:00:00+00', 51),
+  ('Marruecos','Haití','2026-06-24 22:00:00+00', 52),
+  ('Chequia','México','2026-06-25 01:00:00+00', 53),
+  ('Sudáfrica','Corea del Sur','2026-06-25 01:00:00+00', 54),
+  ('Curazao','Costa de Marfil','2026-06-25 20:00:00+00', 55),
+  ('Ecuador','Alemania','2026-06-25 20:00:00+00', 56),
+  ('Japón','Suecia','2026-06-25 23:00:00+00', 57),
+  ('Túnez','Países Bajos','2026-06-25 23:00:00+00', 58),
+  ('Turquía','Estados Unidos','2026-06-26 02:00:00+00', 59),
+  ('Paraguay','Australia','2026-06-26 02:00:00+00', 60),
+  ('Noruega','Francia','2026-06-26 19:00:00+00', 61),
+  ('Senegal','Irak','2026-06-26 19:00:00+00', 62),
+  ('Cabo Verde','Arabia Saudita','2026-06-27 00:00:00+00', 63),
+  ('Uruguay','España','2026-06-27 00:00:00+00', 64),
+  ('Egipto','Irán','2026-06-27 03:00:00+00', 65),
+  ('Nueva Zelanda','Bélgica','2026-06-27 03:00:00+00', 66),
+  ('Panamá','Inglaterra','2026-06-27 21:00:00+00', 67),
+  ('Croacia','Ghana','2026-06-27 21:00:00+00', 68),
+  ('Colombia','Portugal','2026-06-27 23:30:00+00', 69),
+  ('RD Congo','Uzbekistán','2026-06-27 23:30:00+00', 70),
+  ('Argelia','Austria','2026-06-28 02:00:00+00', 71),
+  ('Jordania','Argentina','2026-06-28 02:00:00+00', 72)
+) as v(local, visitante, fh, jornada)
+where s.codigo_acceso = 'MUNDIAL26';
+
+-- Verificación: deben quedar 72 partidos, 6 por cada grupo.
+-- select count(*) from partido;

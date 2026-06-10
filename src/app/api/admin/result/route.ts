@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   if (!(await validarAdmin(clave))) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
-  const { partidoId, golesLocal, golesVisitante } = await req.json();
+  const { partidoId, golesLocal, golesVisitante, ganador } = await req.json();
 
   if (
     !partidoId ||
@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
       goles_local_real: golesLocal,
       goles_visitante_real: golesVisitante,
       estado: "finalizado",
+      ...(ganador ? { ganador } : {}),
     })
     .eq("id", partidoId);
   if (errPartido) {
