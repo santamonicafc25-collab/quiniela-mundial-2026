@@ -830,9 +830,9 @@ function PronosticoRow({ p }: { p: PronosticoAuditoria }) {
       <td className="px-3 py-2 text-center">
         <span
           className={`inline-block text-xs font-bold px-2 py-0.5 rounded-full tabular-nums ${
-            p.puntos >= 3
+            p.puntos === 2
               ? "bg-emerald-100 text-emerald-700"
-              : p.puntos > 0
+              : p.puntos === 1
               ? "bg-amber-100 text-amber-700"
               : "bg-slate-100 text-slate-400"
           }`}
