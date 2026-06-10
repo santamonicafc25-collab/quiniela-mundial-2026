@@ -38,7 +38,7 @@ interface RankingRow {
   exactos: number;
 }
 
-type Tab = "partidos" | "eliminatorias" | "ranking";
+type Tab = "partidos" | "eliminatorias" | "ranking" | "auditoria";
 type FaseFilter = "todas" | "grupos" | "dieciseisavos" | "octavos" | "cuartos" | "semis" | "tercer_puesto" | "final";
 
 // ─────────────────────────────────────────────
@@ -693,6 +693,345 @@ function TabRanking() {
 }
 
 // ─────────────────────────────────────────────
+// Types: Auditoría
+// ─────────────────────────────────────────────
+interface PronosticoAuditoria {
+  partidoId: string;
+  equipoLocal: string;
+  equipoVisitante: string;
+  fase: string;
+  jornada: number;
+  fechaHora: string | null;
+  golesLocal: number;
+  golesVisitante: number;
+  puntos: number;
+}
+
+interface JugadorAuditoria {
+  id: string;
+  nombre: string;
+  fechaRegistro: string;
+  total: number;
+  pronosticos: PronosticoAuditoria[];
+}
+
+interface AuditoriaResponse {
+  jugadores: JugadorAuditoria[];
+}
+
+// ─────────────────────────────────────────────
+// Helper: CSV download
+// ─────────────────────────────────────────────
+function escapeCsvField(value: string | number): string {
+  const str = String(value);
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function descargarCsvJugador(jugador: JugadorAuditoria) {
+  const headers = [
+    "participante",
+    "fecha_registro",
+    "fase",
+    "jornada",
+    "equipo_local",
+    "equipo_visitante",
+    "goles_local_pred",
+    "goles_visitante_pred",
+    "puntos",
+  ];
+  const rows = jugador.pronosticos.map((p) =>
+    [
+      jugador.nombre,
+      jugador.fechaRegistro,
+      p.fase,
+      p.jornada,
+      p.equipoLocal,
+      p.equipoVisitante,
+      p.golesLocal,
+      p.golesVisitante,
+      p.puntos,
+    ]
+      .map(escapeCsvField)
+      .join(",")
+  );
+  const csv = [headers.join(","), ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `auditoria_${jugador.nombre.replace(/\s+/g, "_")}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function descargarCsvTodos(jugadores: JugadorAuditoria[]) {
+  const headers = [
+    "participante",
+    "fecha_registro",
+    "fase",
+    "jornada",
+    "equipo_local",
+    "equipo_visitante",
+    "goles_local_pred",
+    "goles_visitante_pred",
+    "puntos",
+  ];
+  const rows = jugadores.flatMap((jugador) =>
+    jugador.pronosticos.map((p) =>
+      [
+        jugador.nombre,
+        jugador.fechaRegistro,
+        p.fase,
+        p.jornada,
+        p.equipoLocal,
+        p.equipoVisitante,
+        p.golesLocal,
+        p.golesVisitante,
+        p.puntos,
+      ]
+        .map(escapeCsvField)
+        .join(",")
+    )
+  );
+  const csv = [headers.join(","), ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "auditoria_todos_los_participantes.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─────────────────────────────────────────────
+// Sub-component: Fila de pronóstico
+// ─────────────────────────────────────────────
+function PronosticoRow({ p }: { p: PronosticoAuditoria }) {
+  return (
+    <tr className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors">
+      <td className="px-3 py-2 text-sm">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Bandera equipo={p.equipoLocal} size={16} />
+          <span className="text-slate-700 font-medium">{p.equipoLocal}</span>
+          <span className="text-slate-400 text-xs">vs</span>
+          <span className="text-slate-700 font-medium">{p.equipoVisitante}</span>
+          <Bandera equipo={p.equipoVisitante} size={16} />
+        </div>
+      </td>
+      <td className="px-3 py-2 text-xs text-slate-500 capitalize whitespace-nowrap">
+        {p.fase.replace("_", " ")}
+      </td>
+      <td className="px-3 py-2 text-sm font-bold tabular-nums text-center text-slate-800 whitespace-nowrap">
+        {p.golesLocal} – {p.golesVisitante}
+      </td>
+      <td className="px-3 py-2 text-center">
+        <span
+          className={`inline-block text-xs font-bold px-2 py-0.5 rounded-full tabular-nums ${
+            p.puntos >= 3
+              ? "bg-emerald-100 text-emerald-700"
+              : p.puntos > 0
+              ? "bg-amber-100 text-amber-700"
+              : "bg-slate-100 text-slate-400"
+          }`}
+        >
+          {p.puntos} pts
+        </span>
+      </td>
+    </tr>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Sub-component: Tarjeta de jugador
+// ─────────────────────────────────────────────
+function JugadorCard({ jugador }: { jugador: JugadorAuditoria }) {
+  const [expandido, setExpandido] = useState(false);
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      {/* Header de la tarjeta */}
+      <button
+        onClick={() => setExpandido((v) => !v)}
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50/60 transition-colors text-left"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+            style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}
+          >
+            {jugador.nombre.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-800 truncate">{jugador.nombre}</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              <span className="font-semibold tabular-nums text-slate-600">{jugador.total}</span> pronósticos ·{" "}
+              {jugador.fechaRegistro
+                ? new Date(jugador.fechaRegistro).toLocaleDateString("es-AR", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })
+                : "—"}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 ml-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              descargarCsvJugador(jugador);
+            }}
+            title="Descargar CSV"
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 text-slate-600 hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50 transition-all"
+          >
+            ⬇ CSV
+          </button>
+          <span
+            className={`text-slate-400 text-xs transition-transform duration-200 ${expandido ? "rotate-180" : ""}`}
+          >
+            ▼
+          </span>
+        </div>
+      </button>
+
+      {/* Tabla de pronósticos expandida */}
+      {expandido && (
+        <div className="border-t border-slate-100">
+          {jugador.pronosticos.length === 0 ? (
+            <p className="text-sm text-slate-400 px-5 py-4">Sin pronósticos cargados.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[480px]">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="px-3 py-2 text-xs font-semibold text-slate-500 text-left">Partido</th>
+                    <th className="px-3 py-2 text-xs font-semibold text-slate-500 text-left">Fase</th>
+                    <th className="px-3 py-2 text-xs font-semibold text-slate-500 text-center">Pronóstico</th>
+                    <th className="px-3 py-2 text-xs font-semibold text-slate-500 text-center">Puntos</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {jugador.pronosticos.map((p) => (
+                    <PronosticoRow key={p.partidoId} p={p} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Tab: AUDITORÍA
+// ─────────────────────────────────────────────
+function TabAuditoria({ clave }: { clave: string }) {
+  const [datos, setDatos] = useState<AuditoriaResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function cargar() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/admin/predictions", {
+          headers: { "x-admin-clave": clave },
+        });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          setError(d.error ?? "Error al cargar datos de auditoría");
+        } else {
+          const d: AuditoriaResponse = await res.json();
+          setDatos(d);
+        }
+      } catch {
+        setError("Error de red al cargar auditoría");
+      }
+      setLoading(false);
+    }
+    cargar();
+  }, [clave]);
+
+  return (
+    <div className="space-y-4">
+      {/* Encabezado informativo */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl">
+          <span className="text-amber-600 text-sm">🔒</span>
+          <p className="text-xs text-amber-700 font-medium">
+            Vista de solo lectura para auditoría y evidencia.
+          </p>
+        </div>
+        {datos && datos.jugadores.length > 0 && (
+          <button
+            onClick={() => descargarCsvTodos(datos.jugadores)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all"
+            style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}
+          >
+            ⬇ Descargar todo (CSV)
+          </button>
+        )}
+      </div>
+
+      {/* Resumen */}
+      {datos && (
+        <div className="flex items-center justify-between px-4 py-2">
+          <p className="text-sm text-slate-500">
+            <span className="font-bold text-slate-800 tabular-nums">{datos.jugadores.length}</span> participantes ·{" "}
+            <span className="font-bold text-slate-800 tabular-nums">
+              {datos.jugadores.reduce((acc, j) => acc + j.total, 0)}
+            </span>{" "}
+            pronósticos en total
+          </p>
+          <button
+            onClick={() => {
+              setLoading(true);
+              setDatos(null);
+              fetch("/api/admin/predictions", { headers: { "x-admin-clave": clave } })
+                .then((r) => r.json())
+                .then((d) => { setDatos(d); setLoading(false); })
+                .catch(() => { setError("Error al actualizar"); setLoading(false); });
+            }}
+            className="text-xs text-violet-600 hover:text-violet-800 font-medium"
+          >
+            ↻ Actualizar
+          </button>
+        </div>
+      )}
+
+      {/* Estado de carga / error */}
+      {loading && (
+        <div className="text-center py-12 text-slate-400">Cargando auditoría...</div>
+      )}
+      {error && (
+        <div className="px-4 py-3 rounded-xl text-sm font-medium bg-red-50 text-red-700 border border-red-200">
+          {error}
+        </div>
+      )}
+
+      {/* Lista de jugadores */}
+      {!loading && !error && datos && (
+        datos.jugadores.length === 0 ? (
+          <div className="text-center py-12 text-slate-400">No hay participantes registrados.</div>
+        ) : (
+          <div className="space-y-3">
+            {datos.jugadores.map((j) => (
+              <JugadorCard key={j.id} jugador={j} />
+            ))}
+          </div>
+        )
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // Main Admin Page
 // ─────────────────────────────────────────────
 export default function Admin() {
@@ -770,6 +1109,7 @@ export default function Admin() {
     { id: "partidos", label: "Partidos", icon: "⚽" },
     { id: "eliminatorias", label: "Eliminatorias", icon: "🏆" },
     { id: "ranking", label: "Ranking", icon: "📊" },
+    { id: "auditoria", label: "Auditoría", icon: "🧾" },
   ];
 
   return (
@@ -819,6 +1159,7 @@ export default function Admin() {
         {tab === "partidos" && <TabPartidos clave={clave} />}
         {tab === "eliminatorias" && <TabEliminatorias clave={clave} />}
         {tab === "ranking" && <TabRanking />}
+        {tab === "auditoria" && <TabAuditoria clave={clave} />}
       </main>
     </div>
   );
