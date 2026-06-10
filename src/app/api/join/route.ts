@@ -3,9 +3,13 @@ import bcrypt from "bcryptjs";
 import { supabase } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
-  const { codigo, nombre, pin } = await req.json();
+  const body = await req.json();
+  // Recortar espacios para que "Juan" y "Juan " no creen jugadores distintos.
+  const codigo = (body.codigo ?? "").trim();
+  const nombre = (body.nombre ?? "").trim();
+  const pin = (body.pin ?? "").trim();
 
-  if (!codigo || !nombre || !/^\d{4}$/.test(pin ?? "")) {
+  if (!codigo || !nombre || !/^\d{4}$/.test(pin)) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
   }
 
