@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { jornadaCerrada, PartidoFecha } from "@/lib/locking";
+import { jornadaCerrada, gruposBloqueados, PartidoFecha } from "@/lib/locking";
 
 export async function GET(req: NextRequest) {
   const jugadorId = req.nextUrl.searchParams.get("jugadorId");
@@ -24,7 +24,10 @@ export async function GET(req: NextRequest) {
   const ahora = new Date();
   const enriquecidos = (partidos ?? []).map((p) => ({
     ...p,
-    cerrado: p.estado !== "abierto" || jornadaCerrada(p.jornada, fechas, ahora),
+    cerrado:
+      p.estado !== "abierto" ||
+      jornadaCerrada(p.jornada, fechas, ahora) ||
+      gruposBloqueados(p.fase, ahora),
     miPronostico: (pronos ?? []).find((x) => x.partido_id === p.id) ?? null,
   }));
 
