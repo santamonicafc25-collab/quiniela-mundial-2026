@@ -1,14 +1,37 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Login() {
   const router = useRouter();
   const [codigo, setCodigo] = useState("");
-  const [nombre, setNombre] = useState("");
+  const [nombres, setNombres] = useState<string[]>([]);
+  const [seleccion, setSeleccion] = useState(""); // un nombre existente, "" (placeholder) o "__nuevo__"
+  const [nombreNuevo, setNombreNuevo] = useState("");
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Carga los participantes ya registrados al escribir el código (con debounce),
+  // para que los que ya entraron elijan su nombre y no lo escriban (evita duplicados por typo).
+  useEffect(() => {
+    const c = codigo.trim();
+    if (!c) {
+      setNombres([]);
+      return;
+    }
+    const t = setTimeout(() => {
+      fetch(`/api/players?codigo=${encodeURIComponent(c)}`)
+        .then((r) => r.json())
+        .then((d) => setNombres(Array.isArray(d.nombres) ? d.nombres : []))
+        .catch(() => setNombres([]));
+    }, 400);
+    return () => clearTimeout(t);
+  }, [codigo]);
+
+  const hayLista = nombres.length > 0;
+  const esNuevo = !hayLista || seleccion === "__nuevo__";
+  const nombre = esNuevo ? nombreNuevo : seleccion;
 
   async function entrar() {
     setError("");
@@ -32,6 +55,9 @@ export default function Login() {
     }
   }
 
+  const inputCls =
+    "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 text-sm font-medium placeholder-slate-400 transition focus:border-violet-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-200";
+
   return (
     <main
       className="min-h-screen flex items-center justify-center p-4"
@@ -40,11 +66,7 @@ export default function Login() {
           "linear-gradient(135deg, #4f46e5 0%, #7c3aed 25%, #0ea5e9 60%, #10b981 100%)",
       }}
     >
-      {/* Decorative background blobs */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 overflow-hidden"
-      >
+      <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
         <div
           className="absolute -top-32 -left-32 h-96 w-96 rounded-full opacity-20 blur-3xl"
           style={{ background: "radial-gradient(circle, #f59e0b, transparent)" }}
@@ -56,9 +78,7 @@ export default function Login() {
       </div>
 
       <div className="relative w-full max-w-sm">
-        {/* Card */}
         <div className="rounded-2xl bg-white shadow-2xl overflow-hidden">
-          {/* Header strip */}
           <div
             className="px-8 py-8 text-center"
             style={{
@@ -77,7 +97,6 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Form */}
           <div className="px-8 py-7 space-y-4">
             <div className="space-y-3">
               <div>
@@ -85,7 +104,7 @@ export default function Login() {
                   Código de sala
                 </label>
                 <input
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 text-sm font-medium placeholder-slate-400 transition focus:border-violet-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-200"
+                  className={inputCls}
                   placeholder="Ej: MUNDIAL26"
                   value={codigo}
                   onChange={(e) => setCodigo(e.target.value)}
@@ -96,12 +115,42 @@ export default function Login() {
                 <label className="block mb-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                   Tu nombre
                 </label>
-                <input
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 text-sm font-medium placeholder-slate-400 transition focus:border-violet-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-200"
-                  placeholder="¿Cómo te llaman?"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                />
+
+                {hayLista ? (
+                  <>
+                    <select
+                      className={inputCls}
+                      value={seleccion}
+                      onChange={(e) => setSeleccion(e.target.value)}
+                    >
+                      <option value="">Elige tu nombre…</option>
+                      {nombres.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                      <option value="__nuevo__">➕ Soy nuevo participante</option>
+                    </select>
+                    {esNuevo && (
+                      <input
+                        className={`${inputCls} mt-2`}
+                        placeholder="Escribe tu nombre"
+                        value={nombreNuevo}
+                        onChange={(e) => setNombreNuevo(e.target.value)}
+                      />
+                    )}
+                    <p className="mt-1.5 text-[11px] text-slate-400">
+                      Si ya entraste antes, elige tu nombre de la lista para no duplicarte.
+                    </p>
+                  </>
+                ) : (
+                  <input
+                    className={inputCls}
+                    placeholder="¿Cómo te llaman?"
+                    value={nombreNuevo}
+                    onChange={(e) => setNombreNuevo(e.target.value)}
+                  />
+                )}
               </div>
 
               <div>
@@ -109,7 +158,7 @@ export default function Login() {
                   PIN (4 dígitos)
                 </label>
                 <input
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800 text-sm font-medium placeholder-slate-400 tracking-[0.4em] transition focus:border-violet-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-200"
+                  className={`${inputCls} tracking-[0.4em]`}
                   placeholder="••••"
                   inputMode="numeric"
                   maxLength={4}
@@ -140,7 +189,6 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Subtle tagline below card */}
         <p className="mt-4 text-center text-xs text-white/60 font-medium">
           USA · CANADA · MEXICO 2026
         </p>
