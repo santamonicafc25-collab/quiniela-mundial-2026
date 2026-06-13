@@ -1040,6 +1040,8 @@ export default function Admin() {
   const [loginError, setLoginError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
   const [tab, setTab] = useState<Tab>("partidos");
+  const [graciaAbierta, setGraciaAbierta] = useState(false);
+  const [graciaLoading, setGraciaLoading] = useState(false);
 
   async function login() {
     if (!clave.trim()) return;
@@ -1053,9 +1055,26 @@ export default function Admin() {
     setLoggingIn(false);
     if (res.ok) {
       setAuth(true);
+      // Cargar estado del período de gracia al autenticarse
+      fetch("/api/admin/grace", { headers: { "x-admin-clave": clave } })
+        .then((r) => r.json())
+        .then((d) => setGraciaAbierta(d.graciaAbierta ?? false))
+        .catch(() => {});
     } else {
       setLoginError("Clave incorrecta. Intentá de nuevo.");
     }
+  }
+
+  async function toggleGracia() {
+    setGraciaLoading(true);
+    const nuevo = !graciaAbierta;
+    const res = await fetch("/api/admin/grace", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-clave": clave },
+      body: JSON.stringify({ graciaAbierta: nuevo }),
+    });
+    if (res.ok) setGraciaAbierta(nuevo);
+    setGraciaLoading(false);
   }
 
   // ── LOGIN FORM ──
@@ -1153,6 +1172,45 @@ export default function Admin() {
           ))}
         </div>
       </header>
+
+      {/* Banner período de gracia */}
+      <div
+        className={`border-b transition-colors ${
+          graciaAbierta
+            ? "bg-amber-50 border-amber-200"
+            : "bg-slate-100 border-slate-200"
+        }`}
+      >
+        <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-lg">{graciaAbierta ? "🔓" : "🔒"}</span>
+            <div>
+              <p className={`text-sm font-semibold ${graciaAbierta ? "text-amber-800" : "text-slate-600"}`}>
+                Período de gracia:{" "}
+                <span className={graciaAbierta ? "text-amber-600" : "text-slate-500"}>
+                  {graciaAbierta ? "ABIERTO" : "CERRADO"}
+                </span>
+              </p>
+              <p className={`text-xs ${graciaAbierta ? "text-amber-600" : "text-slate-400"}`}>
+                {graciaAbierta
+                  ? "Participantes pueden completar pronósticos faltantes (no modificar los existentes)"
+                  : "Solo pronósticos antes del inicio de cada partido"}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={toggleGracia}
+            disabled={graciaLoading}
+            className={`shrink-0 px-4 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-50 ${
+              graciaAbierta
+                ? "bg-amber-500 hover:bg-amber-600 text-white"
+                : "bg-slate-600 hover:bg-slate-700 text-white"
+            }`}
+          >
+            {graciaLoading ? "..." : graciaAbierta ? "Cerrar período" : "Abrir período de gracia"}
+          </button>
+        </div>
+      </div>
 
       {/* Content */}
       <main className="max-w-5xl mx-auto px-4 py-6">

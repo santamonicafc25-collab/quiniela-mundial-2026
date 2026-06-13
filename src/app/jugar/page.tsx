@@ -25,6 +25,7 @@ export default function Jugar() {
   const [marcadores, setMarcadores] = useState<Record<string, Marcador>>({});
   const [tabActiva, setTabActiva] = useState<string>("Grupos");
   const [cargando, setCargando] = useState(true);
+  const [graciaAbierta, setGraciaAbierta] = useState(false);
 
   useEffect(() => {
     const id = localStorage.getItem("jugadorId");
@@ -43,6 +44,7 @@ export default function Jugar() {
     ]).then(([matchData, standData, rankData]) => {
       const ps: PartidoUI[] = matchData.partidos ?? [];
       setPartidos(ps);
+      setGraciaAbierta(matchData.graciaAbierta ?? false);
 
       const init: Record<string, Marcador> = {};
       for (const p of ps) {
@@ -135,6 +137,18 @@ export default function Jugar() {
           />
         </div>
       </div>
+
+      {/* Banner período de gracia */}
+      {graciaAbierta && !cargando && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="mx-auto max-w-2xl px-4 py-2.5 flex items-start gap-2">
+            <span className="text-amber-500 text-base mt-0.5 shrink-0">🔓</span>
+            <p className="text-xs text-amber-700 font-medium leading-snug">
+              <span className="font-bold">Período de gracia activo:</span> podés completar pronósticos que no hayas ingresado. Los que ya tenés no se pueden cambiar.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <main className="mx-auto max-w-2xl px-4 py-5">
