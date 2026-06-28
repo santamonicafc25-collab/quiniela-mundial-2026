@@ -321,16 +321,24 @@ function TabEliminatorias({ clave }: { clave: string }) {
 
   async function cargarPropuesta() {
     setLoadingKo(true);
-    await cargarPartidos();
-    const res = await fetch("/api/admin/knockout", { headers: { "x-admin-clave": clave } });
-    if (res.ok) {
+    setMsg(null);
+    try {
+      await cargarPartidos();
+      const res = await fetch("/api/admin/knockout", { headers: { "x-admin-clave": clave } });
       const d = await res.json();
-      setKnockoutData(d);
-      const edits: Record<number, { local: string; visitante: string }> = {};
-      for (const c of d.cruces) edits[c.codigo] = { local: c.local, visitante: c.visitante };
-      setCruceEdits(edits);
+      if (!res.ok) {
+        setMsg({ text: d.error ?? "Error al cargar propuesta", tipo: "error" });
+      } else {
+        setKnockoutData(d);
+        const edits: Record<number, { local: string; visitante: string }> = {};
+        for (const c of d.cruces) edits[c.codigo] = { local: c.local, visitante: c.visitante };
+        setCruceEdits(edits);
+      }
+    } catch (e) {
+      setMsg({ text: "Error de red al cargar propuesta: " + (e instanceof Error ? e.message : String(e)), tipo: "error" });
+    } finally {
+      setLoadingKo(false);
     }
-    setLoadingKo(false);
   }
 
   async function publicarDieciseisavos() {
@@ -341,17 +349,21 @@ function TabEliminatorias({ clave }: { clave: string }) {
       visitante: cruceEdits[c.codigo]?.visitante ?? c.visitante,
       fechaHora: c.fechaHora,
     }));
-    const res = await fetch("/api/admin/knockout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-clave": clave },
-      body: JSON.stringify({ partidos: partidosBody }),
-    });
-    const d = await res.json();
-    if (res.ok) {
-      setMsg({ text: `Dieciseisavos publicados (${d.creados} partidos)`, tipo: "ok" });
-      await cargarPartidos();
-    } else {
-      setMsg({ text: d.error ?? "Error al publicar", tipo: "error" });
+    try {
+      const res = await fetch("/api/admin/knockout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-clave": clave },
+        body: JSON.stringify({ partidos: partidosBody }),
+      });
+      const d = await res.json();
+      if (res.ok) {
+        setMsg({ text: `Dieciseisavos publicados (${d.creados} partidos)`, tipo: "ok" });
+        await cargarPartidos();
+      } else {
+        setMsg({ text: d.error ?? "Error al publicar", tipo: "error" });
+      }
+    } catch (e) {
+      setMsg({ text: "Error de red: " + (e instanceof Error ? e.message : String(e)), tipo: "error" });
     }
     setTimeout(() => setMsg(null), 5000);
   }
@@ -391,17 +403,21 @@ function TabEliminatorias({ clave }: { clave: string }) {
     edits: { codigo: number; fase: string; local: string; visitante: string; fechaHora: string }[],
     nombre: string
   ) {
-    const res = await fetch("/api/admin/knockout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-clave": clave },
-      body: JSON.stringify({ partidos: edits }),
-    });
-    const d = await res.json();
-    if (res.ok) {
-      setMsg({ text: `${nombre} publicados (${d.creados} partidos)`, tipo: "ok" });
-      await cargarPartidos();
-    } else {
-      setMsg({ text: d.error ?? "Error", tipo: "error" });
+    try {
+      const res = await fetch("/api/admin/knockout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-clave": clave },
+        body: JSON.stringify({ partidos: edits }),
+      });
+      const d = await res.json();
+      if (res.ok) {
+        setMsg({ text: `${nombre} publicados (${d.creados} partidos)`, tipo: "ok" });
+        await cargarPartidos();
+      } else {
+        setMsg({ text: d.error ?? "Error", tipo: "error" });
+      }
+    } catch (e) {
+      setMsg({ text: "Error de red: " + (e instanceof Error ? e.message : String(e)), tipo: "error" });
     }
     setTimeout(() => setMsg(null), 5000);
   }
