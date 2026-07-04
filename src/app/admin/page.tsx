@@ -44,18 +44,33 @@ type FaseFilter = "todas" | "grupos" | "dieciseisavos" | "octavos" | "cuartos" |
 // ─────────────────────────────────────────────
 // Helper: resolve W## / RU## placeholders
 // ─────────────────────────────────────────────
+// Ganador de un partido: el marcado explícitamente (penales), o si no, el que se
+// deduce del marcador cuando no hubo empate. Así los cruces siguientes se resuelven
+// aunque el admin no haya pulsado "ganador" (siempre que el resultado no sea empate).
+function ganadorDe(p: Partido): string | null {
+  if (p.ganador) return p.ganador;
+  const gl = p.goles_local_real;
+  const gv = p.goles_visitante_real;
+  if (gl != null && gv != null && gl !== gv) {
+    return gl > gv ? p.equipo_local : p.equipo_visitante;
+  }
+  return null;
+}
+
 function resolvePlaceholder(ph: string, partidos: Partido[]): { equipo: string | null; falta: boolean } {
   if (ph.startsWith("W")) {
     const cod = parseInt(ph.slice(1), 10);
     const p = partidos.find((x) => x.codigo === cod);
-    if (!p || !p.ganador) return { equipo: null, falta: true };
-    return { equipo: p.ganador, falta: false };
+    const g = p ? ganadorDe(p) : null;
+    if (!g) return { equipo: null, falta: true };
+    return { equipo: g, falta: false };
   }
   if (ph.startsWith("RU")) {
     const cod = parseInt(ph.slice(2), 10);
     const p = partidos.find((x) => x.codigo === cod);
-    if (!p || !p.ganador) return { equipo: null, falta: true };
-    const perdedor = p.equipo_local === p.ganador ? p.equipo_visitante : p.equipo_local;
+    const g = p ? ganadorDe(p) : null;
+    if (!p || !g) return { equipo: null, falta: true };
+    const perdedor = p.equipo_local === g ? p.equipo_visitante : p.equipo_local;
     return { equipo: perdedor, falta: false };
   }
   return { equipo: ph, falta: false };
