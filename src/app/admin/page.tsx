@@ -332,12 +332,15 @@ function TabEliminatorias({ clave }: { clave: string }) {
     if (msg) document.getElementById("ko-msg")?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [msg]);
 
-  async function cargarPartidos() {
+  async function cargarPartidos(): Promise<Partido[]> {
     const res = await fetch("/api/admin/matches", { headers: { "x-admin-clave": clave } });
     if (res.ok) {
       const d = await res.json();
-      setPartidos(d.partidos ?? []);
+      const ps: Partido[] = d.partidos ?? [];
+      setPartidos(ps);
+      return ps;
     }
+    return [];
   }
 
   async function cargarPropuesta() {
@@ -389,11 +392,14 @@ function TabEliminatorias({ clave }: { clave: string }) {
     setTimeout(() => setMsg(null), 5000);
   }
 
-  function generarRonda(fase: string) {
+  // `fuente` permite pasar los partidos recién traídos por cargarPartidos(); si no,
+  // usa el estado. Evita resolver con un estado desactualizado (React no lo actualiza
+  // sincrónicamente tras setPartidos), que dejaba todos los cruces como "W73".
+  function generarRonda(fase: string, fuente: Partido[] = partidos) {
     const llaves = RONDAS_SIGUIENTES.filter((l) => l.fase === fase);
     const resueltas = llaves.map((l) => {
-      const loc = resolvePlaceholder(l.local, partidos);
-      const vis = resolvePlaceholder(l.visitante, partidos);
+      const loc = resolvePlaceholder(l.local, fuente);
+      const vis = resolvePlaceholder(l.visitante, fuente);
       return {
         codigo: l.codigo, fase: l.fase,
         local: loc.equipo ?? l.local,
@@ -407,8 +413,8 @@ function TabEliminatorias({ clave }: { clave: string }) {
     else if (fase === "final" || fase === "tercer_puesto") {
       const finalY3 = RONDAS_SIGUIENTES.filter((l) => l.fase === "final" || l.fase === "tercer_puesto");
       const r = finalY3.map((l) => {
-        const loc = resolvePlaceholder(l.local, partidos);
-        const vis = resolvePlaceholder(l.visitante, partidos);
+        const loc = resolvePlaceholder(l.local, fuente);
+        const vis = resolvePlaceholder(l.visitante, fuente);
         return {
           codigo: l.codigo, fase: l.fase,
           local: loc.equipo ?? l.local,
@@ -555,7 +561,7 @@ function TabEliminatorias({ clave }: { clave: string }) {
           edits={octavosEdits}
           setEdits={setOctavosEdits}
           falta={hayFaltantes(RONDAS_SIGUIENTES, "octavos")}
-          onGenerar={() => { cargarPartidos().then(() => generarRonda("octavos")); }}
+          onGenerar={() => { cargarPartidos().then((fresh) => generarRonda("octavos", fresh)); }}
           onPublicar={() => publicarRonda(octavosEdits, "Octavos")}
           updateEdit={(cod, field, val) => updateRondaEdit(octavosEdits, setOctavosEdits, cod, field, val)}
         />
@@ -567,7 +573,7 @@ function TabEliminatorias({ clave }: { clave: string }) {
           edits={cuartosEdits}
           setEdits={setCuartosEdits}
           falta={hayFaltantes(RONDAS_SIGUIENTES, "cuartos")}
-          onGenerar={() => { cargarPartidos().then(() => generarRonda("cuartos")); }}
+          onGenerar={() => { cargarPartidos().then((fresh) => generarRonda("cuartos", fresh)); }}
           onPublicar={() => publicarRonda(cuartosEdits, "Cuartos")}
           updateEdit={(cod, field, val) => updateRondaEdit(cuartosEdits, setCuartosEdits, cod, field, val)}
         />
@@ -579,7 +585,7 @@ function TabEliminatorias({ clave }: { clave: string }) {
           edits={semisEdits}
           setEdits={setSemisEdits}
           falta={hayFaltantes(RONDAS_SIGUIENTES, "semis")}
-          onGenerar={() => { cargarPartidos().then(() => generarRonda("semis")); }}
+          onGenerar={() => { cargarPartidos().then((fresh) => generarRonda("semis", fresh)); }}
           onPublicar={() => publicarRonda(semisEdits, "Semifinales")}
           updateEdit={(cod, field, val) => updateRondaEdit(semisEdits, setSemisEdits, cod, field, val)}
         />
@@ -592,11 +598,11 @@ function TabEliminatorias({ clave }: { clave: string }) {
           setEdits={setFinalEdits}
           falta={hayFaltantes(RONDAS_SIGUIENTES, "final_3er")}
           onGenerar={() => {
-            cargarPartidos().then(() => {
+            cargarPartidos().then((fresh) => {
               const finalY3 = RONDAS_SIGUIENTES.filter((l) => l.fase === "final" || l.fase === "tercer_puesto");
               const r = finalY3.map((l) => {
-                const loc = resolvePlaceholder(l.local, partidos);
-                const vis = resolvePlaceholder(l.visitante, partidos);
+                const loc = resolvePlaceholder(l.local, fresh);
+                const vis = resolvePlaceholder(l.visitante, fresh);
                 return {
                   codigo: l.codigo, fase: l.fase,
                   local: loc.equipo ?? l.local,
