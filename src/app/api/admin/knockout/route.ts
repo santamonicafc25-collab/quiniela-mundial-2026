@@ -75,14 +75,15 @@ export async function POST(req: NextRequest) {
   let creados = 0;
   let actualizados = 0;
   for (const p of (partidos ?? []) as { codigo: number; fase: string; local: string; visitante: string; fechaHora: string }[]) {
-    const { data: existente } = await supabase
+    // Buscamos TODAS las filas con ese codigo (por si en una publicación previa se duplicaron).
+    const { data: existentes, error: errSel } = await supabase
       .from("partido")
       .select("id")
       .eq("sala_id", sala.id)
-      .eq("codigo", p.codigo)
-      .maybeSingle();
+      .eq("codigo", p.codigo);
+    if (errSel) return NextResponse.json({ error: "No se pudo consultar: " + errSel.message }, { status: 500 });
 
-    if (existente) {
+    if (existentes && existentes.length > 0) {
       const { error } = await supabase
         .from("partido")
         .update({
@@ -91,9 +92,9 @@ export async function POST(req: NextRequest) {
           fecha_hora: p.fechaHora,
           fase: p.fase,
         })
-        .eq("id", existente.id);
+        .in("id", existentes.map((e) => e.id));
       if (error) return NextResponse.json({ error: "No se pudo actualizar: " + error.message }, { status: 500 });
-      actualizados++;
+      actualizados += existentes.length;
     } else {
       const { error } = await supabase.from("partido").insert({
         sala_id: sala.id,

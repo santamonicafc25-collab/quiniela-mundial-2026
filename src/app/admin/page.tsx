@@ -311,6 +311,12 @@ function TabEliminatorias({ clave }: { clave: string }) {
   const [semisEdits, setSemisEdits] = useState<{ codigo: number; fase: string; local: string; visitante: string; fechaHora: string; sede: string }[]>([]);
   const [finalEdits, setFinalEdits] = useState<{ codigo: number; fase: string; local: string; visitante: string; fechaHora: string; sede: string }[]>([]);
 
+  // Al aparecer un mensaje (publicación/errores), lo traemos a la vista: el botón
+  // "Publicar" puede quedar muy abajo y el banner de estado está arriba.
+  useEffect(() => {
+    if (msg) document.getElementById("ko-msg")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [msg]);
+
   async function cargarPartidos() {
     const res = await fetch("/api/admin/matches", { headers: { "x-admin-clave": clave } });
     if (res.ok) {
@@ -447,7 +453,7 @@ function TabEliminatorias({ clave }: { clave: string }) {
     <div className="space-y-6">
       {/* Mensaje */}
       {msg && (
-        <div className={`px-4 py-3 rounded-xl text-sm font-medium ${
+        <div id="ko-msg" className={`px-4 py-3 rounded-xl text-sm font-medium ${
           msg.tipo === "ok" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
           msg.tipo === "error" ? "bg-red-50 text-red-700 border border-red-200" :
           "bg-sky-50 text-sky-700 border border-sky-200"
@@ -484,20 +490,26 @@ function TabEliminatorias({ clave }: { clave: string }) {
               <div key={c.codigo} className="grid grid-cols-[auto_1fr_auto_1fr_auto] gap-2 items-center p-3 rounded-xl bg-slate-50 border border-slate-100">
                 <span className="text-xs text-slate-400 w-6 tabular-nums">{c.codigo}</span>
                 <div className="space-y-1">
-                  <input
-                    value={cruceEdits[c.codigo]?.local ?? c.local}
-                    onChange={(e) => setCruceEdits(prev => ({ ...prev, [c.codigo]: { ...prev[c.codigo], local: e.target.value } }))}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-violet-400"
-                  />
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Bandera equipo={cruceEdits[c.codigo]?.local ?? c.local} size={16} />
+                    <input
+                      value={cruceEdits[c.codigo]?.local ?? c.local}
+                      onChange={(e) => setCruceEdits(prev => ({ ...prev, [c.codigo]: { ...prev[c.codigo], local: e.target.value } }))}
+                      className="flex-1 min-w-0 text-sm border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                    />
+                  </div>
                   <p className="text-xs text-slate-400 tabular-nums pl-1">{c.localPlaceholder}</p>
                 </div>
                 <span className="text-slate-400 text-xs font-bold px-1">vs</span>
                 <div className="space-y-1">
-                  <input
-                    value={cruceEdits[c.codigo]?.visitante ?? c.visitante}
-                    onChange={(e) => setCruceEdits(prev => ({ ...prev, [c.codigo]: { ...prev[c.codigo], visitante: e.target.value } }))}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-violet-400"
-                  />
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Bandera equipo={cruceEdits[c.codigo]?.visitante ?? c.visitante} size={16} />
+                    <input
+                      value={cruceEdits[c.codigo]?.visitante ?? c.visitante}
+                      onChange={(e) => setCruceEdits(prev => ({ ...prev, [c.codigo]: { ...prev[c.codigo], visitante: e.target.value } }))}
+                      className="flex-1 min-w-0 text-sm border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                    />
+                  </div>
                   <p className="text-xs text-slate-400 tabular-nums pl-1">{c.visitantePlaceholder}</p>
                 </div>
                 <div className="text-right min-w-0">
@@ -631,17 +643,23 @@ function RondaSection({ titulo, edits, falta, onGenerar, onPublicar, updateEdit 
           {edits.map((e) => (
             <div key={e.codigo} className="grid grid-cols-[auto_1fr_auto_1fr_auto] gap-2 items-center text-sm">
               <span className="text-xs text-slate-400 w-6 tabular-nums">{e.codigo}</span>
-              <input
-                value={e.local}
-                onChange={(ev) => updateEdit(e.codigo, "local", ev.target.value)}
-                className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-violet-400"
-              />
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Bandera equipo={e.local} size={16} />
+                <input
+                  value={e.local}
+                  onChange={(ev) => updateEdit(e.codigo, "local", ev.target.value)}
+                  className="flex-1 min-w-0 border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-violet-400"
+                />
+              </div>
               <span className="text-slate-400 text-xs font-bold px-1">vs</span>
-              <input
-                value={e.visitante}
-                onChange={(ev) => updateEdit(e.codigo, "visitante", ev.target.value)}
-                className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-violet-400"
-              />
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Bandera equipo={e.visitante} size={16} />
+                <input
+                  value={e.visitante}
+                  onChange={(ev) => updateEdit(e.codigo, "visitante", ev.target.value)}
+                  className="flex-1 min-w-0 border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-violet-400"
+                />
+              </div>
               <div className="text-right">
                 <p className="text-xs text-slate-400 truncate max-w-[80px]">{e.sede}</p>
               </div>
