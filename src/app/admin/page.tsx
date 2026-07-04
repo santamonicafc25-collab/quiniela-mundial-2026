@@ -357,7 +357,7 @@ function TabEliminatorias({ clave }: { clave: string }) {
       });
       const d = await res.json();
       if (res.ok) {
-        setMsg({ text: `Dieciseisavos publicados (${d.creados} partidos)`, tipo: "ok" });
+        setMsg({ text: `Dieciseisavos publicados (${(d.creados ?? 0) + (d.actualizados ?? 0)} partidos)`, tipo: "ok" });
         await cargarPartidos();
       } else {
         setMsg({ text: d.error ?? "Error al publicar", tipo: "error" });
@@ -411,7 +411,7 @@ function TabEliminatorias({ clave }: { clave: string }) {
       });
       const d = await res.json();
       if (res.ok) {
-        setMsg({ text: `${nombre} publicados (${d.creados} partidos)`, tipo: "ok" });
+        setMsg({ text: `${nombre} publicados (${(d.creados ?? 0) + (d.actualizados ?? 0)} partidos)`, tipo: "ok" });
         await cargarPartidos();
       } else {
         setMsg({ text: d.error ?? "Error", tipo: "error" });
@@ -603,6 +603,11 @@ interface RondaSectionProps {
 }
 
 function RondaSection({ titulo, edits, falta, onGenerar, onPublicar, updateEdit }: RondaSectionProps) {
+  // Un valor sigue siendo un placeholder sin resolver si está vacío o es del tipo "W73"/"RU101".
+  // Bloqueamos "Publicar" mientras algún cruce editado tenga un placeholder, para no guardar
+  // filas sin equipo real (que saldrían sin bandera ni nombre en el bracket).
+  const esPlaceholder = (v: string) => v.trim() === "" || /^W\d+$/.test(v.trim()) || /^RU\d+$/.test(v.trim());
+  const editsIncompletas = edits.some((e) => esPlaceholder(e.local) || esPlaceholder(e.visitante));
   return (
     <div className="border border-slate-100 rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -615,7 +620,7 @@ function RondaSection({ titulo, edits, falta, onGenerar, onPublicar, updateEdit 
         </button>
       </div>
 
-      {falta && edits.length > 0 && (
+      {(falta || editsIncompletas) && edits.length > 0 && (
         <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
           Algunos cruces aún no tienen ganador. Edita los equipos manualmente o espera a que estén los resultados.
         </p>
@@ -644,7 +649,9 @@ function RondaSection({ titulo, edits, falta, onGenerar, onPublicar, updateEdit 
           ))}
           <button
             onClick={onPublicar}
-            className="w-full py-2 rounded-xl text-sm font-bold text-white transition-all"
+            disabled={editsIncompletas}
+            title={editsIncompletas ? "Hay cruces sin equipo real (ej. W73). Espera los ganadores o edita los equipos manualmente." : undefined}
+            className="w-full py-2 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ background: "linear-gradient(135deg,#16a34a,#15803d)" }}
           >
             Publicar {titulo}

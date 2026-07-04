@@ -60,7 +60,10 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ listo: finalizados === 72, finalizados, cruces });
 }
 
-// POST: crea filas de partido para una ronda. Body: { partidos: [{codigo,fase,local,visitante,fechaHora}] }
+// POST: crea o actualiza filas de partido para una ronda. Body: { partidos: [{codigo,fase,local,visitante,fechaHora}] }
+// Idempotente: si ya existe un partido con ese `codigo` en la sala, actualiza los equipos/fecha
+// (útil cuando la ronda se publicó antes con placeholders "W73" y luego se conocen los ganadores).
+// Nunca toca estado/goles/ganador ni las predicciones ligadas por partido_id.
 export async function POST(req: NextRequest) {
   if (!(await validarAdmin(req.headers.get("x-admin-clave")))) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -69,17 +72,42 @@ export async function POST(req: NextRequest) {
   const { data: sala } = await supabase.from("sala").select("id").limit(1).single();
   if (!sala) return NextResponse.json({ error: "Sin sala" }, { status: 500 });
 
-  const filas = (partidos ?? []).map((p: { codigo: number; fase: string; local: string; visitante: string; fechaHora: string }) => ({
-    sala_id: sala.id,
-    equipo_local: p.local,
-    equipo_visitante: p.visitante,
-    fecha_hora: p.fechaHora,
-    fase: p.fase,
-    jornada: p.codigo,
-    codigo: p.codigo,
-    estado: "abierto",
-  }));
-  const { error } = await supabase.from("partido").insert(filas);
-  if (error) return NextResponse.json({ error: "No se pudo crear: " + error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, creados: filas.length });
+  let creados = 0;
+  let actualizados = 0;
+  for (const p of (partidos ?? []) as { codigo: number; fase: string; local: string; visitante: string; fechaHora: string }[]) {
+    const { data: existente } = await supabase
+      .from("partido")
+      .select("id")
+      .eq("sala_id", sala.id)
+      .eq("codigo", p.codigo)
+      .maybeSingle();
+
+    if (existente) {
+      const { error } = await supabase
+        .from("partido")
+        .update({
+          equipo_local: p.local,
+          equipo_visitante: p.visitante,
+          fecha_hora: p.fechaHora,
+          fase: p.fase,
+        })
+        .eq("id", existente.id);
+      if (error) return NextResponse.json({ error: "No se pudo actualizar: " + error.message }, { status: 500 });
+      actualizados++;
+    } else {
+      const { error } = await supabase.from("partido").insert({
+        sala_id: sala.id,
+        equipo_local: p.local,
+        equipo_visitante: p.visitante,
+        fecha_hora: p.fechaHora,
+        fase: p.fase,
+        jornada: p.codigo,
+        codigo: p.codigo,
+        estado: "abierto",
+      });
+      if (error) return NextResponse.json({ error: "No se pudo crear: " + error.message }, { status: 500 });
+      creados++;
+    }
+  }
+  return NextResponse.json({ ok: true, creados, actualizados });
 }
